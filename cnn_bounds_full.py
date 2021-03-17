@@ -169,7 +169,7 @@ class Model:
                 self.weights.append(None)
                 self.biases.append(None)
             elif type(layer) == InputLayer:
-                #print('input')
+                print('input')
             elif type(layer) == BatchNormalization:
                 print('batch normalization')
                 

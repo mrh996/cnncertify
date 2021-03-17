@@ -826,8 +826,8 @@ def compute_bounds(weights, biases, out_shape, nlayer, x0, eps, p_n, pads, strid
 #Main function to find output bounds
 def find_output_bounds(weights, biases, shapes, pads, strides, sizes, types, x0, eps, p_n):
     #LB, UB = conv_bound(weights[0], biases[0], pads[0], strides[0], x0, eps, p_n)
-    for i in range(len(x0)):
-        x0[i] = x0
+    #for i in range(len(x0)):
+        #x0[i] = x0
     LBs = [x0-eps]
     UBs = [x0+eps]
 

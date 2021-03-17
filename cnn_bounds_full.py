@@ -32,7 +32,7 @@ def loss(correct, predicted):
         return tf.nn.softmax_cross_entropy_with_logits(labels=correct,
                                                     logits=predicted)
 #General model class
-
+f = open('/content/drive/MyDrive/very-3d.txt', "a+")
 class Model:
     def __init__(self, model, inp_shape = (2048,3)):
         temp_weights = [layer.get_weights() for layer in model.layers]
@@ -54,7 +54,7 @@ class Model:
             print(cur_shape)
             weights = layer.get_weights()
             if type(layer) == Conv1D:
-                print('conv')
+                #print('conv')
                 if len(weights) == 1:
                     W = weights[0].astype(np.float32)
                     b = np.zeros(W.shape[-1], dtype=np.float32)
@@ -82,7 +82,7 @@ class Model:
                 self.weights.append(W)
                 self.biases.append(b)
             elif type(layer) == GlobalAveragePooling2D:
-                print('global avg pool')
+                #print('global avg pool')
                 b = np.zeros(cur_shape[-1], dtype=np.float32)
                 W = np.zeros((cur_shape[0],cur_shape[1],cur_shape[2],cur_shape[2]), dtype=np.float32)
                 for f in range(W.shape[2]):
@@ -100,7 +100,7 @@ class Model:
                 self.weights.append(W)
                 self.biases.append(b)
             elif type(layer) == Reshape:
-                print('reshape')
+                #print('reshape')
                 '''
                 cur_shape = (int(np.sqrt(cur_shape[-1])),int(np.sqrt(cur_shape[-1])))
                 W = np.ascontiguousarray(W.transpose((2,0,1)).astype(np.float32))
@@ -114,7 +114,7 @@ class Model:
                 self.biases.append(b)
                 '''
             elif type(layer) == GlobalAveragePooling1D:
-                print('global avg pool')
+                #print('global avg pool')
                 b = np.zeros(cur_shape[-1], dtype=np.float32)
                 W = np.zeros((cur_shape[0],cur_shape[1],cur_shape[1]), dtype=np.float32)
                 for f in range(W.shape[1]):
@@ -134,7 +134,7 @@ class Model:
                 self.weights.append(W)
                 self.biases.append(b)
             elif type(layer) == AveragePooling2D:
-                print('avg pool')
+                #print('avg pool')
                 b = np.zeros(cur_shape[-1], dtype=np.float32)
                 padding = layer.get_config()['padding']
                 pool_size = layer.get_config()['pool_size']
@@ -160,7 +160,7 @@ class Model:
                 self.weights.append(W)
                 self.biases.append(b)
             elif type(layer) == Activation or type(layer) == Lambda:
-                print('activation')
+                #print('activation')
                 self.types.append('relu')
                 self.sizes.append(None)
                 self.strides.append(None)
@@ -169,7 +169,7 @@ class Model:
                 self.weights.append(None)
                 self.biases.append(None)
             elif type(layer) == InputLayer:
-                print('input')
+                #print('input')
             elif type(layer) == BatchNormalization:
                 print('batch normalization')
                 
@@ -178,13 +178,13 @@ class Model:
                 std = np.sqrt(std+0.001) #Avoids zero division
                 a = gamma/std
                 b = -gamma*mean/std+beta
-                print('a shape is',np.shape(a))
+                #print('a shape is',np.shape(a))
                 print(np.shape(self.weights[-1]))
                 self.weights[-1] = np.ascontiguousarray(a*self.weights[-1].transpose((1,2,0)).astype(np.float32))
                 self.weights[-1] = np.ascontiguousarray(self.weights[-1].transpose((2,0,1)).astype(np.float32))
                 self.biases[-1] = a*self.biases[-1]+b
             elif type(layer) == Dense:
-                print('FC')
+                #print('FC')
                 W, b = weights
                 b = b.astype(np.float32)
                 W = W.reshape(list(cur_shape)+[W.shape[-1]]).astype(np.float32)
@@ -238,7 +238,7 @@ class Model:
                 
                 
             elif type(layer) == ResidualStart2:
-                print('basic block 2')
+                #print('basic block 2')
                 conv1 = model.layers[i]
                 bn1 = model.layers[i+1]
                 conv2 = model.layers[i+3]
@@ -692,7 +692,7 @@ def compute_bounds(weights, biases, out_shape, nlayer, x0, eps, p_n, pads, strid
             stride = 1
         '''
     elif types[nlayer-1] == 'conv':
-        print('conv')
+        #print('conv')
         
         A_u = weights[nlayer-1].reshape((1, weights[nlayer-1].shape[0], weights[nlayer-1].shape[1], weights[nlayer-1].shape[2]))*np.ones((out_shape[0], weights[nlayer-1].shape[0], weights[nlayer-1].shape[1], weights[nlayer-1].shape[2]), dtype=np.float32)
         B_u = biases[nlayer-1]*np.ones((out_shape[0], out_shape[1]), dtype=np.float32)
@@ -701,7 +701,7 @@ def compute_bounds(weights, biases, out_shape, nlayer, x0, eps, p_n, pads, strid
         pad = pads[nlayer-1]
         stride = 1
     elif types[nlayer-1] == 'pool':
-        print('pool')
+        #print('pool')
         A_u = np.eye(out_shape[1]).astype(np.float32).reshape((1,out_shape[1],1,out_shape[1]))*np.ones((out_shape[0], out_shape[1], 1,out_shape[1]), dtype=np.float32)
         B_u = np.zeros(out_shape, dtype=np.float32)
         A_l = A_u.copy()
@@ -767,19 +767,19 @@ def compute_bounds(weights, biases, out_shape, nlayer, x0, eps, p_n, pads, strid
             stride = 1
         '''
         if types[i] == 'conv':
-            print('conv')
+            #print('conv')
             
-            print('weights.shape',weights[i].shape)
-            print('UBs[i].shape',UBs[i].shape)
-            print('prev A_u',A_u.shape)
+            #print('weights.shape',weights[i].shape)
+            #print('UBs[i].shape',UBs[i].shape)
+            #print('prev A_u',A_u.shape)
             
             A_u, B_u = UL_conv_bound(A_u, B_u, np.asarray(pad), np.asarray(stride), np.asarray(UBs[i+1].shape), weights[i], biases[i], np.asarray(pads[i]), np.asarray(strides[i]), np.asarray(UBs[i].shape))
-            print('A_u',A_u.shape)
+            #print('A_u',A_u.shape)
             A_l, B_l = UL_conv_bound(A_l, B_l, np.asarray(pad), np.asarray(stride), np.asarray(LBs[i+1].shape), weights[i], biases[i], np.asarray(pads[i]), np.asarray(strides[i]), np.asarray(LBs[i].shape))
             pad = (0,0,0,0)
             stride = 1
         elif types[i] == 'pool':
-            print('pool')
+            #print('pool')
             #pool_size = weights[i].shape[-1:]
             pool_size = [1]
             alpha_u, alpha_l, beta_u, beta_l = pool_linear_bounds(LBs[i], UBs[i], np.asarray(pads[i]), np.asarray(strides[i]),  pool_size)
@@ -922,6 +922,7 @@ def run(model, n_samples, p_n, q_n, activation = 'relu', cifar=False, tinyimagen
         for j in range(steps):
             #print('Step ' + str(j))
             LB, UB = find_output_bounds(weights, biases, shapes, model.pads, model.strides, model.sizes, model.types, inputs[i].astype(np.float32), np.exp(log_eps), p_n)
+            print("Step {}, eps = {:.5f}, {:.6s} <= f_c - f_t <= {:.6s}".format(j,np.exp(log_eps),str(np.squeeze(LB)),str(np.squeeze(UB))),file = f)
             print("Step {}, eps = {:.5f}, {:.6s} <= f_c - f_t <= {:.6s}".format(j,np.exp(log_eps),str(np.squeeze(LB)),str(np.squeeze(UB))))
             if LB > 0: #Increase eps
                 log_eps_min = log_eps
@@ -935,6 +936,7 @@ def run(model, n_samples, p_n, q_n, activation = 'relu', cifar=False, tinyimagen
         else:
             str_p_n = str(p_n)
 
+        print("[L1] method = CNN-Cert-{},  image no = {}, true_id = {}, target_label = {}, true_label = {}, norm = {}, robustness = {:.5f}".format(activation, i, true_ids[i],target_label,predict_label,str_p_n,np.exp(log_eps_min)),file =f)
         print("[L1] method = CNN-Cert-{},  image no = {}, true_id = {}, target_label = {}, true_label = {}, norm = {}, robustness = {:.5f}".format(activation, i, true_ids[i],target_label,predict_label,str_p_n,np.exp(log_eps_min)))
         summation += np.exp(log_eps_min)
     K.clear_session()
@@ -942,5 +944,6 @@ def run(model, n_samples, p_n, q_n, activation = 'relu', cifar=False, tinyimagen
     eps_avg = summation/len(inputs)
     total_time = (time.time()-start_time)/len(inputs)
     print("[L0] method = CNN-Cert-{},  total images = {}, norm = {}, avg robustness = {:.5f}, avg runtime = {:.2f}".format(activation,len(inputs),str_p_n,eps_avg,total_time))
+    print("[L0] method = CNN-Cert-{},  total images = {}, norm = {}, avg robustness = {:.5f}, avg runtime = {:.2f}".format(activation,len(inputs),str_p_n,eps_avg,total_time),file = f)
     return eps_avg, total_time
     

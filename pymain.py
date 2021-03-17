@@ -330,7 +330,7 @@ def run_LP(layers, mlp_file_name, num_image=10, core=True, cifar=False):
         times.append(timess)
     return LBs, times
 
-
+'''
 from CLEVER.collect_gradients import collect_gradients
 def run_CLEVER(file_name, num_image = 10, cifar=False, tinyimagenet=False):
     if len(file_name.split('_')) == 5:
@@ -365,7 +365,7 @@ def run_CLEVER(file_name, num_image = 10, cifar=False, tinyimagenet=False):
         LBs.append(LBss)
         times.append(timess)
     return LBs, times
-
+'''
 #Runs global Lips bound
 def run_global(file_name, num_layers, num_image=10, cifar=False, tinyimagenet=False):
     if len(file_name.split('_')) == 5:

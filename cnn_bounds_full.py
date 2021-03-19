@@ -885,7 +885,7 @@ def run(model, n_samples, p_n, q_n, activation = 'relu', cifar=False, tinyimagen
     elif tinyimagenet:
         inputs, targets, true_labels, true_ids, img_info = generate_data(tinyImagenet(), samples=n_samples, targeted=True, random_and_least_likely = True, target_type = 0b0010, predictor=model.model.predict, start=0)
     else:
-        inputs, targets, true_labels, true_ids, img_info = generate_pointnet_data(samples=100, targeted=True, random_and_least_likely = True, target_type = 0b0010, predictor=model.model.predict, start=0)
+        inputs, targets, true_labels, true_ids, img_info = generate_pointnet_data(samples=100, targeted=True, random_and_least_likely = True, target_type = 0b0001, predictor=model.model.predict, start=0)
 
     if len(inputs) == 0:
         return 0, 0

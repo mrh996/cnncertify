@@ -10,8 +10,8 @@ import trimesh
 from numba import njit
 import pandas as pd
 from PIL import Image
-random.seed(1215)
-np.random.seed(1215)
+random.seed(10)
+np.random.seed(10)
 import tensorflow as tf
 
 def linf_dist(x, y):
@@ -43,7 +43,7 @@ def show(img, name = "output.png"):
     print("START")
     for i in range(28):
         print("".join([remap[int(round(x))] for x in img[i*28:i*28+28]]))
-def parse_dataset(DATA_DIR,num_points=2048):
+def parse_dataset(DATA_DIR,num_points=512):
 
     train_points = []
     train_labels = []
@@ -110,7 +110,7 @@ def generate_pointnet_data(samples, targeted=True, random_and_least_likely = Fal
     )
     DATA_DIR = os.path.join(os.path.dirname(DATA_DIR), "ModelNet10")
     
-    NUM_POINTS = 2048
+    NUM_POINTS = 512
     NUM_CLASSES = 10
     BATCH_SIZE = 32
     train_points, test_points, train_labels, test_labels, CLASS_MAP = parse_dataset(DATA_DIR,NUM_POINTS)

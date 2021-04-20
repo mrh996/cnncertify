@@ -117,7 +117,7 @@ def generate_pointnet_data(samples, targeted=True, random_and_least_likely = Fal
     input_data = test_points
     #test_labels
     #print(true_labels.shape[0])
-    target_candidate_pool = np.eye(test_labels.shape[0])
+    target_candidate_pool = np.eye(NUM_CLASSES)
 
     target_candidate_pool_remove_background_class = np.eye(test_labels.shape[0] - 1)
     print('generating labels...')

@@ -9,7 +9,7 @@ Copyright (C) 2018, Akhilan Boopathy <akhilan@mit.edu>
                     Sijia Liu <Sijia.Liu@ibm.com>
                     Luca Daniel <dluca@mit.edu>
 """
-import subprocess 
+import subprocess
 import numpy as np
 from cnn_bounds_full import run as run_cnn_full
 from cnn_bounds_full_core import run as run_cnn_full_core
@@ -23,12 +23,12 @@ from tensorflow.keras.optimizers import SGD, Adam
 from tensorflow.python.keras.engine.base_layer import Layer
 from tensorflow.keras.initializers import Constant
 from tensorflow.keras.optimizers import Adam
-from keras.backend import manual_variable_initialization
-manual_variable_initialization(True)
+#from keras.backend import manual_variable_initialization
+#manual_variable_initialization(True)
 import tensorflow as tf
 import time as timing
 import datetime
-
+from utils import generate_pointnet_data
 ts = timing.time()
 timestr = datetime.datetime.fromtimestamp(ts).strftime('%Y%m%d_%H%M%S')
 
@@ -109,6 +109,7 @@ def tnet(inputs, num_features):
     x = conv_bn(x, 64)
     x = conv_bn(x, 512)
     x = GlobalAveragePooling1D()(x)
+    #x = GlobalMaxPooling1D()(x)
     x = dense_bn(x, 256)
     x = dense_bn(x, 128)
     x = Dense(
@@ -125,28 +126,34 @@ inputs = Input(shape=(NUM_POINTS, 3))
 x = tnet(inputs, 3)
 x = conv_bn(x, 32)
 x = conv_bn(x, 32)
-x = tnet(x, 32)
+#x = tnet(x, 32)
 x = conv_bn(x, 32)
 x = conv_bn(x, 64)
 x = conv_bn(x, 512)
 x = GlobalAveragePooling1D()(x)
+#x = GlobalMaxPooling1D()(x)
 x = dense_bn(x, 256)
 x = Dropout(0.3)(x)
 x = dense_bn(x, 128)
 x = Dropout(0.3)(x)
 
-outputs = Dense(NUM_CLASSES, activation="softmax")(x)
+outputs = Dense(NUM_CLASSES)(x)
 
+#outputs = Activation('linear')(x)
 model = Model(inputs=inputs, outputs=outputs, name="pointnet")
 model.summary()
-model.load_weights('/Users/angela/Downloads/pretrained_weights.h5')
+model.load_weights('/content/drive/MyDrive/pretrained_weights_noet_average_64.h5')
+#model.load_weights('./pretrained_weights_noet_average_2048.h5')
+#model.load_weights('./pretrained_weights_noet_average_64.h5')
+#model.load_weights('./pretrained_weights_noet_average_512.h5')
+
 model.compile(
-    loss="sparse_categorical_crossentropy",
+    loss='sparse_categorical_crossentropy',
     optimizer=Adam(lr=0.001),
     metrics=["sparse_categorical_accuracy"],
 )
 #Runs CNN-Cert with specified parameters
-def run_cnn(model, n_samples, norm, core=True, activation='relu', cifar=False, tinyimagenet=False):
+def run_cnn(model, inputs, targets, true_labels, true_ids, img_info, n_samples, norm, core=True, activation='relu', cifar=False, tinyimagenet=False):
     if core:
         if norm == 'i':
             #run_cnn_full_core(file_name, n_samples, 105, 1, activation, cifar, tinyimagenet)
@@ -157,11 +164,11 @@ def run_cnn(model, n_samples, norm, core=True, activation='relu', cifar=False, t
             return run_cnn_full_core(model, n_samples, 1, 105, activation, cifar, tinyimagenet)
     else:
         if norm == 'i':
-            return run_cnn_full(model, n_samples, 105, 1, activation, cifar, tinyimagenet)
+            return run_cnn_full(model, inputs, targets, true_labels, true_ids, img_info,  n_samples, 105, 1, activation, cifar, tinyimagenet)
         elif norm == '2':
-            return run_cnn_full(model, n_samples, 2, 2, activation, cifar, tinyimagenet)
+            return run_cnn_full(model, inputs, targets, true_labels, true_ids, img_info,  n_samples, 2, 2, activation, cifar, tinyimagenet)
         if norm == '1':
-            return run_cnn_full(model, n_samples, 1, 105, activation, cifar, tinyimagenet)
+            return run_cnn_full(model, inputs, targets, true_labels, true_ids, img_info,  n_samples, 1, 105, activation, cifar, tinyimagenet)
 
 #Runs all Fast-Lin and CNN-Cert variations
 def run_all_relu(layers, file_name, mlp_file_name, cifar = False, num_image=10, flfull = False, nonada = False):
@@ -249,7 +256,7 @@ def run_all_general(file_name, num_image = 10, core=True, cifar=False, ada=True,
     for norm in ['i', '2', '1']:
         LBss = []
         timess = []
-        LB, time = run_cnn(file_name, num_image, norm, core=core, activation = 'relu', cifar= cifar)  
+        LB, time = run_cnn(file_name, num_image, norm, core=core, activation = 'relu', cifar= cifar)
         printlog("CNN-Cert-relu")
         if filters:
             printlog("model name = {0}, numlayer = {1}, numimage = {2}, norm = {3}, targettype = random, filters = {4}, kernel size = {5}".format(file_name,nlayer,num_image,norm,filters,kernel_size))
@@ -394,22 +401,19 @@ def run_global(file_name, num_layers, num_image=10, cifar=False, tinyimagenet=Fa
     return LBs, times
 
 #Run all norm attacks
-def run_attack(file_name, sess, num_image = 10, cifar = False, tinyimagenet=False):
-    if len(file_name.split('_')) == 5:
-        nlayer = file_name.split('_')[-3][0]
-        filters = file_name.split('_')[-2]
-        kernel_size = file_name.split('_')[-1]
-    else:
-        filters = None
+def run_attack( sess, num_image = 1, cifar = False, tinyimagenet=False):
+    
     UBs = []
     times = []
-    for norm in ['i', '2', '1']:
-        UB, time = cw_attack(file_name, norm, sess, num_image, cifar, tinyimagenet)
+    for norm in [ '1']:
+        UB, time = cw_attack( sess, num_image, cifar, tinyimagenet)
         printlog("CW/EAD")
+        '''
         if filters:
             printlog("model name = {0}, numlayer = {1}, numimage = {2}, norm = {3}, targettype = random, filters = {4}, kernel size = {5}".format(file_name,nlayer,num_image,norm,filters,kernel_size))
         else:
             printlog("model name = {0}, numimage = {1}, norm = {2}, targettype = random".format(file_name,num_image,norm))
+        '''
         printlog("avg robustness = {:.5f}".format(UB))
         printlog("avg run time = {:.2f}".format(time)+" sec")
         printlog("-----------------------------------")
@@ -421,7 +425,20 @@ def run_attack(file_name, sess, num_image = 10, cifar = False, tinyimagenet=Fals
 if __name__ == '__main__':
     LB = []
     time = []
+    '''
+    if cifar:
+        inputs, targets, true_labels, true_ids, img_info = generate_data(CIFAR(), samples=n_samples, targeted=True, random_and_least_likely = True, target_type = 0b0010, predictor=model.model.predict, start=0)
+    elif tinyimagenet:
+        inputs, targets, true_labels, true_ids, img_info = generate_data(tinyImagenet(), samples=n_samples, targeted=True, random_and_least_likely = True, target_type = 0b0010, predictor=model.model.predict, start=0)
+    else:
+    '''
+    prob_predict = model.predict
+    
+    inputs, targets, true_labels, true_ids, img_info = generate_pointnet_data(NUM_POINTS,samples=100, targeted=True, random_and_least_likely = True, target_type = 0b0001, predictor=model.predict, start=0)
+    #inputs, targets, true_labels, true_ids, img_info = generate_pointnet_data(NUM_POINTS,samples=100, targeted=True, random_and_least_likely = True, target_type = 0b0010, predictor=model.predict, start=0)
 
+    #print("[DATAGEN][L1] no = {}, true_id = {}, true_label = {}, predicted = {}, correct = {}, seq = {}, info = {}".format(total, start + i,
+     #                   test_labels[start+i], predicted_label, test_labels[start+i]== predicted_label, seq, [] if len(seq) == 0 else information[-len(seq):]))
     table = 0
     print("==================================================")
     print("================ Running Table {} ================".format(table))
@@ -430,7 +447,7 @@ if __name__ == '__main__':
     printlog("Table {} result".format(table))
     printlog("-----------------------------------")
     if table == 0:
-        LBs, times = run_cnn(model, 10, '1', core=False, activation='relu', cifar=False, tinyimagenet=False)
+        LBs, times = run_cnn(model, inputs, targets, true_labels, true_ids, img_info, 10, '1', core=False, activation='relu', cifar=False, tinyimagenet=False)
     if table == 1:
         # Testing algorithm once
         LBs, times = run_all_relu([3380, 2880, 2420], 'models/mnist_cnn_4layer_5_3', 'models/mnist_cnn_as_mlp_4layer_5_3', flfull=True)
@@ -519,13 +536,13 @@ if __name__ == '__main__':
         time.append(times)
     if table == 8:
         #Table 8
-        LBs, times = run_all_relu([20], 'models/mnist_2layer_fc_20', 'models/mnist_2layer_fc_20', flfull=True)        
+        LBs, times = run_all_relu([20], 'models/mnist_2layer_fc_20', 'models/mnist_2layer_fc_20', flfull=True)
         LB.append(LBs)
         time.append(times)
         LBs, times = run_LP([20], 'models/mnist_2layer_fc_20')
         LB.append(LBs)
         time.append(times)
-        LBs, times = run_all_relu([20,20], 'models/mnist_3layer_fc_20', 'models/mnist_3layer_fc_20', flfull=True)  
+        LBs, times = run_all_relu([20,20], 'models/mnist_3layer_fc_20', 'models/mnist_3layer_fc_20', flfull=True)
         LB.append(LBs)
         time.append(times)
         LBs, times = run_LP([20,20], 'models/mnist_3layer_fc_20')
@@ -602,6 +619,7 @@ if __name__ == '__main__':
         time.append(times)
     print(LB)
     print(time)
+    '''
     print('CLEVER')
     if table == 3 or table == 4:
         #Table 3+4
@@ -681,8 +699,11 @@ if __name__ == '__main__':
         time.append(times)
     print(LB)
     print(time)
+    '''
     print('CW/EAD')
     with K.get_session() as sess:
+        if table ==0:
+          LBs, times = run_attack ( sess)
         if table == 3:
             #Table 3
             LBs, times = run_attack('models/mnist_cnn_4layer_5_3', sess)

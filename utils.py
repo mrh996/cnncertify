@@ -14,6 +14,7 @@ random.seed(10)
 np.random.seed(10)
 import tensorflow as tf
 
+f = open('./very-3d.txt', "a+")
 def linf_dist(x, y):
     return np.linalg.norm(x.flatten() - y.flatten(), ord=np.inf)
 
@@ -43,7 +44,7 @@ def show(img, name = "output.png"):
     print("START")
     for i in range(28):
         print("".join([remap[int(round(x))] for x in img[i*28:i*28+28]]))
-def parse_dataset(DATA_DIR,num_points=512):
+def parse_dataset(DATA_DIR,num_points=2048):
 
     train_points = []
     train_labels = []
@@ -83,9 +84,16 @@ def augment(points, label):
     # shuffle points
     points = tf.random.shuffle(points)
     return points, label
-
-import random
-def generate_pointnet_data(samples, targeted=True, random_and_least_likely = False, skip_wrong_label = True, start=0, ids = None,
+import  random
+def load_matrices(file_name):
+         with open(file_name, 'rb') as f:
+             A = np.load(f,allow_pickle=True)
+             B = np.load(f,allow_pickle=True)
+             C = np.load(f,allow_pickle=True)
+             D = np.load(f,allow_pickle=True) 
+             E = np.load(f,allow_pickle=True) 
+             return (A,B,C,D,E)
+def generate_pointnet_data(NUM_POINTS,samples, targeted=True, random_and_least_likely = False, skip_wrong_label = True, start=0, ids = None,
         target_classes = None, target_type = 0b1111, predictor = None, imagenet=False, remove_background_class=False, save_inputs=False, model_name=None, save_inputs_dir=None):
     """
     Generate the input data to the attack algorithm.
@@ -98,6 +106,9 @@ def generate_pointnet_data(samples, targeted=True, random_and_least_likely = Fal
     target_classes: a list of list of labels for each ids
     inception: if targeted and inception, randomly sample 100 targets intead of 1000
     """
+    #my_file = 'test_data_64.npy'
+    #my_file = 'test_10_512.npy'
+    my_file = 'test_10_2048.npy'
     inputs = []
     targets = []
     true_labels = []
@@ -110,14 +121,23 @@ def generate_pointnet_data(samples, targeted=True, random_and_least_likely = Fal
     )
     DATA_DIR = os.path.join(os.path.dirname(DATA_DIR), "ModelNet10")
     
-    NUM_POINTS = 512
+    #NUM_POINTS = 2048
     NUM_CLASSES = 10
     BATCH_SIZE = 32
-    train_points, test_points, train_labels, test_labels, CLASS_MAP = parse_dataset(DATA_DIR,NUM_POINTS)
+    #train_points, test_points, train_labels, test_labels, CLASS_MAP = parse_dataset(DATA_DIR,NUM_POINTS)
+    def save_matrices(A,B,C,D,E, file_name):
+            with open(file_name, 'wb') as f:
+                np.save(f, A)
+                np.save(f, B)              
+                np.save(f, C)     
+                np.save(f, D)
+                np.save(f, E)
+    #save_matrices(train_points, test_points, train_labels, test_labels, CLASS_MAP, my_file)
+    train_points, test_points, train_labels, test_labels, CLASS_MAP = load_matrices(my_file)
     input_data = test_points
     #test_labels
     #print(true_labels.shape[0])
-    target_candidate_pool = np.eye(NUM_CLASSES)
+    target_candidate_pool = np.eye(10)
 
     target_candidate_pool_remove_background_class = np.eye(test_labels.shape[0] - 1)
     print('generating labels...')
@@ -139,8 +159,11 @@ def generate_pointnet_data(samples, targeted=True, random_and_least_likely = Fal
                     original_predict = np.squeeze(predictor(np.expand_dims(input_data[start+i],axis = 0)))
                     num_classes = len(original_predict)
                     predicted_label = np.argmax(original_predict)
+                    print('predict probability',original_predict[predicted_label],file =f)
                     least_likely_label = np.argmin(original_predict)
+                    print('least_likely_label probability',original_predict[least_likely_label],file =f)
                     top2_label = np.argsort(original_predict)[-2]
+                    print('top2 label target probability',original_predict[top2_label],file =f )
                     start_class = 1 if (imagenet and not remove_background_class) else 0
                     random_class = predicted_label
                     new_seq = [least_likely_label, top2_label, predicted_label]

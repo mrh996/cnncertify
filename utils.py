@@ -106,9 +106,9 @@ def generate_pointnet_data(NUM_POINTS,samples, targeted=True, random_and_least_l
     target_classes: a list of list of labels for each ids
     inception: if targeted and inception, randomly sample 100 targets intead of 1000
     """
-    #my_file = 'test_data_64.npy'
+    my_file = 'test_data_64.npy'
     #my_file = 'test_10_512.npy'
-    my_file = 'test_10_2048.npy'
+    #my_file = 'test_10_2048.npy'
     inputs = []
     targets = []
     true_labels = []
